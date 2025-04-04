@@ -1,0 +1,210 @@
+#include <stdio.h>
+
+// Define um número máximo de produtos que podem ser cadastrados
+#define MAX_PRODUTOS 50
+
+// Estrutura que representa um produto
+struct Produto {
+    int id;               // Identificador único do produto
+    char nome[30];       // Nome do produto
+    float preco;         // Preço do produto
+    int qnt;             // Quantidade disponível do produto
+};
+
+// Função para cadastrar um novo produto
+void cadastrarProduto(struct Produto *produto) {
+    printf("Insira o nome do produto: ");
+    scanf("%s", produto->nome);       // Lê o nome do produto
+    printf("Insira o preco do produto: ");
+    scanf("%f", &produto->preco);      // Lê o preço do produto
+    printf("Insira a quantidade do produto: ");
+    scanf("%d", &produto->qnt);        // Lê a quantidade do produto
+}
+
+// Função para exibir os detalhes de um produto
+void exibirProduto(const struct Produto *produto, int index) {
+    // Verifica se o produto foi cadastrado (id não zero)
+    if (produto->id != 0) {
+        printf("-------------------------------------\n");
+        printf("Produto %d, id: %d\n", index + 1, produto->id);
+        printf("Nome: %s\n", produto->nome);
+        printf("Preco: R$%.2f\n", produto->preco);
+        // Exibe a quantidade ou indica que o produto está esgotado
+        printf("Quantidade de itens: %s\n", produto->qnt ? 
+               (char[20]){0}, sprintf((char[20]){0}, "%d", produto->qnt), (char[20]){0} : "Esgotado");
+        printf("-------------------------------------\n");
+    }
+}
+
+// Função para adicionar um produto ao carrinho
+void adicionarProdutoCarrinho(struct Produto *loja, struct Produto *carrinho, 
+                               int *prodsCarrinho, int id, int quantidade) {
+    int index = id - 1; // Ajusta o índice para o array (baseado em 0)
+    // Verifica se a quantidade solicitada é válida
+    if (loja[index].qnt < quantidade) {
+        printf("Quantidade inválida.\n");
+        return;
+    }
+
+    // Verifica se o produto já existe no carrinho
+    for (int i = 0; i < *prodsCarrinho; i++) {
+        if (carrinho[i].id == loja[index].id) {
+            // Se existir, atualiza a quantidade e reduz da loja
+            carrinho[i].qnt += quantidade;
+            loja[index].qnt -= quantidade;
+            return;
+        }
+    }
+
+    // Caso não exista, adiciona um novo item ao carrinho
+    carrinho[*prodsCarrinho] = loja[index];
+    carrinho[*prodsCarrinho].qnt = quantidade;
+    loja[index].qnt -= quantidade; // Reduz a quantidade da loja
+    (*prodsCarrinho)++; // Incrementa o número de produtos no carrinho
+}
+
+// Função para remover um produto do carrinho
+void removerProdutoCarrinho(struct Produto *carrinho, struct Produto *loja, 
+                             int *prodsCarrinho, int id) {
+    int index = id - 1; // Ajusta o índice
+    // Verifica se o índice é válido
+    if (index < 0 || index >= *prodsCarrinho) {
+        printf("Número inválido.\n");
+        return;
+    }
+
+    // Retorna a quantidade do produto removido para a loja
+    loja[carrinho[index].id - 1].qnt += carrinho[index].qnt;
+    // Remove o item do carrinho deslocando os elementos restantes
+    for (int i = index; i < (*prodsCarrinho) - 1; i++) {
+        carrinho[i] = carrinho[i + 1];
+    }
+    (*prodsCarrinho)--; // Decrementa o número de produtos no carrinho
+    printf("Produto removido com sucesso.\n");
+}
+
+// Função para aplicar um cupom de desconto
+void aplicarCupom(struct Produto *carrinho, int prodsCarrinho, int codigo, int *cupom) {
+    if (*cupom != 0) { // Verifica se já foi usado um cupom
+        printf("Cupom já resgatado.\n");
+        return;
+    }
+
+    // Verifica se o código do cupom é válido
+    if (codigo == 22297360 || codigo == 11197052 || codigo == 88812345) {
+        // Aplica o desconto correspondente a cada código
+        for (int i = 0; i < prodsCarrinho; i++) {
+            if (codigo == 22297360) {
+                carrinho[i].preco /= 2; // 50% de desconto
+            } else if (codigo == 11197052) {
+                carrinho[i].preco *= 0.7; // 30% de desconto
+            } else if (codigo == 88812345) {
+                carrinho[i].preco *= 0.9; // 10% de desconto
+            }
+        }
+        *cupom = 1; // Marca o cupom como utilizado
+        printf("Cupom aplicado com sucesso.\n");
+    } else {
+        printf("Código incorreto.\n");
+    }
+}
+
+// Função para finalizar a compra e calcular o total
+void finalizarCompra(struct Produto *carrinho, int prodsCarrinho) {
+    float total = 0; // Inicializa o total
+    // Calcula o total do carrinho
+    for (int i = 0; i < prodsCarrinho; i++) {
+        total += carrinho[i].preco * carrinho[i].qnt;
+    }
+    // Exibe o preço total
+    printf("O preço total do seu carrinho é: R$%.2f\n", total);
+}
+
+// Função principal
+int main(void) {
+    // Arrays para armazenar produtos da loja e do carrinho
+    struct Produto loja[MAX_PRODUTOS] = {0};
+    struct Produto carrinho[MAX_PRODUTOS] = {0};
+    int opcao, prodsLoja = 0, prodsCarrinho = 0; // Contadores de produtos
+    int cupom = 0; // Estado do cupom
+
+    // Loop principal do sistema
+    while (1) {
+        printf("\n--------------- BEM-VINDOS AO MERCADO DO FUTURO ---------------\n");
+        printf("1 - Cadastrar Produto\n");
+        printf("2 - Visualizar Itens da Loja\n");
+        printf("3 - Adicionar Produto ao Carrinho\n");
+        printf("4 - Visualizar Carrinho\n");
+        printf("5 - Remover Item do Carrinho\n");
+        printf("6 - Adicionar Cupom\n");
+        printf("7 - Finalizar Compra\n");
+        printf("8 - Fechar Sistema\n");
+        printf("Escolha uma opcao: ");
+        scanf("%d", &opcao); // Lê a opção do usuário
+
+        switch (opcao) {
+            case 1: // Cadastrar novo produto
+                if (prodsLoja < MAX_PRODUTOS) {
+                    loja[prodsLoja].id = prodsLoja + 1; // Atribui um ID ao novo produto
+                    cadastrarProduto(&loja[prodsLoja]); // Chama função para cadastrar
+                    prodsLoja++; // Incrementa o contador de produtos
+                } else {
+                    printf("Limite de produtos na loja alcançado.\n");
+                }
+                break;
+            case 2: // Visualizar produtos cadastrados
+                for (int i = 0; i < prodsLoja; i++) {
+                    exibirProduto(&loja[i], i); // Chama função para exibir cada produto
+                }
+                if (prodsLoja == 0) {
+                    printf("Nenhum produto cadastrado.\n");
+                }
+                break;
+            case 3: { // Adicionar produto ao carrinho
+                int id, quantidade;
+                printf("Insira o id do produto desejado: ");
+                scanf("%d", &id); // Lê o ID do produto
+                printf("Insira a quantidade desejada: ");
+                scanf("%d", &quantidade); // Lê a quantidade desejada
+                adicionarProdutoCarrinho(loja, carrinho, &prodsCarrinho, id, quantidade); // Adiciona ao carrinho
+                break;
+            }
+            case 4: // Visualizar produtos no carrinho
+                for (int i = 0; i < prodsCarrinho; i++) {
+                    exibirProduto(&carrinho[i], i); // Chama função para exibir cada produto no carrinho
+                }
+                if (prodsCarrinho == 0) {
+                    printf("Nenhum produto no carrinho.\n");
+                }
+                break;
+            case 5: { // Remover produto do carrinho
+                int id;
+                printf("Insira o id do produto a ser removido: ");
+                scanf("%d", &id); // Lê o ID do produto a ser removido
+                removerProdutoCarrinho(carrinho, loja, &prodsCarrinho, id); // Remove do carrinho
+                break;
+            }
+            case 6: { // Adicionar cupom
+                int codigo;
+                printf("Digite o codigo de seu cupom: ");
+                scanf("%d", &codigo); // Lê o código do cupom
+                aplicarCupom(carrinho, prodsCarrinho, codigo, &cupom); // Aplica o cupom
+                break;
+            }
+            case 7: // Finalizar a compra
+                finalizarCompra(carrinho, prodsCarrinho); // Calcula e exibe o total
+                printf("Deseja finalizar a compra? (1 - Sim | 2 - Não): ");
+                scanf("%d", &opcao); // Pergunta ao usuário se deseja finalizar
+                if (opcao == 1) {
+                    printf("Compra finalizada! Volte sempre!\n");
+                    return 0; // Encerra o programa
+                }
+                break;
+            case 8: // Fechar o sistema
+                printf("Sistema fechado. Volte sempre!\n");
+                return 0; // Encerra o programa
+            default: // Caso de opção inválida
+                printf("Opção inválida.\n");
+        }
+    }
+}
